@@ -1,4 +1,5 @@
 # djmidi
+yknow i should have called it ddjmidi
 
 ## Why
 
