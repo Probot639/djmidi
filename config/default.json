@@ -1,0 +1,153 @@
+{
+  "active_profile": "default",
+  "device_name_match": "FLX4",
+  "profiles": {
+    "default": {
+      "ccs": {
+        "1:0x04": {
+          "type": "knob",
+          "mode": "wheel_scroll",
+          "units_per_tick": 4
+        },
+        "1:0x07": {
+          "type": "knob",
+          "mode": "threshold",
+          "low_threshold": 30,
+          "high_threshold": 90,
+          "key_low":  "S",
+          "key_high": "W"
+        },
+        "1:0x13": {
+          "type": "knob",
+          "mode": "direction_tap",
+          "units_per_tap": 6,
+          "key_inc": "VK_UP",
+          "key_dec": "VK_DOWN"
+        },
+        "1:0x21": {
+          "deadzone": 1,
+          "hold_threshold": 2,
+          "hold_timeout_ms": 120,
+          "mode": "mouse_x",
+          "mouse_scale": 5,
+          "ticks_per_tap": 4,
+          "type": "jog"
+        },
+        "2:0x21": {
+          "deadzone": 1,
+          "hold_threshold": 2,
+          "hold_timeout_ms": 120,
+          "key_left": "A",
+          "key_right": "D",
+          "mode": "held_key",
+          "mouse_scale": 5,
+          "ticks_per_tap": 4,
+          "type": "jog"
+        },
+        "7:0x18": {
+          "key": "T",
+          "type": "key_tap"
+        }
+      },
+      "description": "v0.5 default: pads as numbers/letters, transport, jog wheels split into mouse-X and held A/D",
+      "notes": {
+        "10:0x00": {
+          "key": "A",
+          "type": "key_tap"
+        },
+        "10:0x01": {
+          "key": "B",
+          "type": "key_tap"
+        },
+        "10:0x02": {
+          "key": "C",
+          "type": "key_tap"
+        },
+        "10:0x03": {
+          "key": "D",
+          "type": "key_tap"
+        },
+        "10:0x04": {
+          "key": "E",
+          "type": "key_tap"
+        },
+        "10:0x05": {
+          "key": "F",
+          "type": "key_tap"
+        },
+        "10:0x06": {
+          "key": "G",
+          "type": "key_tap"
+        },
+        "10:0x07": {
+          "key": "H",
+          "type": "key_tap"
+        },
+        "1:0x0B": {
+          "key": "VK_SPACE",
+          "type": "key_tap"
+        },
+        "1:0x0C": {
+          "key": "VK_RETURN",
+          "type": "key_tap"
+        },
+        "1:0x36": {
+          "button": "right",
+          "type": "mouse_button"
+        },
+        "1:0x58": {
+          "key": "VK_BACK",
+          "type": "key_tap"
+        },
+        "2:0x0B": {
+          "key": "VK_TAB",
+          "type": "key_tap"
+        },
+        "2:0x0C": {
+          "key": "VK_ESCAPE",
+          "type": "key_tap"
+        },
+        "2:0x36": {
+          "button": "left",
+          "type": "mouse_button"
+        },
+        "2:0x58": {
+          "key": "VK_DELETE",
+          "type": "key_tap"
+        },
+        "8:0x00": {
+          "key": "F",
+          "type": "key_tap"
+        },
+        "8:0x01": {
+          "key": "2",
+          "type": "key_tap"
+        },
+        "8:0x02": {
+          "key": "3",
+          "type": "key_tap"
+        },
+        "8:0x03": {
+          "key": "4",
+          "type": "key_tap"
+        },
+        "8:0x04": {
+          "key": "5",
+          "type": "key_tap"
+        },
+        "8:0x05": {
+          "key": "6",
+          "type": "key_tap"
+        },
+        "8:0x06": {
+          "key": "7",
+          "type": "key_tap"
+        },
+        "8:0x07": {
+          "key": "8",
+          "type": "key_tap"
+        }
+      }
+    }
+  }
+}
