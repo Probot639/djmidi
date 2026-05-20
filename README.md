@@ -1,9 +1,12 @@
 # djmidi
 
-Pioneer DDJ-FLX4 to Windows keyboard. MIDI input from the controller
-gets routed to `SendInput` keystrokes and mouse deltas so the FLX4 can
-drive games. Personal project. There is no public FLX4 MIDI map worth
-trusting end-to-end, so step one is the sniffer.
+## Why
+
+There are a few projects that exist for rebinding midi input to a normal keyboard/mouse setup, however none out there fit my use case of a DDJ-FLX4 so after discussing this with the girl i'm currently seeing i just decided to build it myself now. This project basically only exists because I want to play Trackmania 2020 and EX-XDRiVER using my dj decks.
+
+## Project Description
+
+Pioneer DDJ-FLX4 to Windows keyboard. MIDI input from the controller gets routed to `SendInput` keystrokes and mouse deltas so the FLX4 can drive games. Personal project. There is no public FLX4 MIDI map worth trusting end-to-end, so step one is the sniffer.
 
 ## Build
 
@@ -14,9 +17,7 @@ sudo apt install mingw-w64
 make
 ```
 
-Output goes to `build/sniff.exe` and `build/djmidi.exe`. The repo lives
-on `/mnt/e/djmidi` so the exes are reachable from Windows at
-`E:\djmidi\build\`.
+Output goes to `build/sniff.exe` and `build/djmidi.exe`. The repo lives on `/mnt/e/djmidi` so the exes are reachable from Windows at `E:\djmidi\build\`.
 
 ## Sniffer usage
 
@@ -35,13 +36,9 @@ opening device 0. ctrl+c to quit.
 ...
 ```
 
-D1 is data byte 1 (note number or CC number), D2 is the value. Channel
-is 1-indexed because that's how Pioneer / Serato / rekordbox all number
-them in their docs.
+D1 is data byte 1 (note number or CC number), D2 is the value. Channel is 1-indexed because that's how Pioneer / Serato / rekordbox all number them in their docs.
 
-Press every pad, twist every knob, scroll both jog wheels with the
-controller plugged in. Save the output. That's the empirical MIDI
-map.
+Press every pad, twist every knob, scroll both jog wheels with the controller plugged in. Save the output. That's the empirical MIDI map.
 
 ## Status
 
@@ -98,13 +95,9 @@ Default mapping (in `config/default.json`, testable in Notepad):
 - Status block (profile name, config path, binding counts)
 - Live MIDI event readout (updates every event)
 - **Reload config** button (force a re-read without waiting for the mtime poll)
-- **Start MIDI learn** button. Click it, hit any pad/button/knob on the
-  FLX4, then click the key-input box and press the key you want bound.
-  The new `key_tap` binding is appended to the active profile and saved
-  to the JSON file. The mtime watcher picks the change up automatically.
+- **Start MIDI learn** button. Click it, hit any pad/button/knob on the FLX4, then click the key-input box and press the key you want bound. The new `key_tap` binding is appended to the active profile and saved to the JSON file. The mtime watcher picks the change up automatically.
 
-Profile switching is not in the GUI yet, edit the `active_profile`
-field in the JSON and save, the running app will pick it up.
+Profile switching is not in the GUI yet, edit the `active_profile` field in the JSON and save, the running app will pick it up.
 
 ## Config format
 
@@ -163,13 +156,9 @@ Action types:
 }
 ```
 
-Jog and Knob both bind to CC events. The difference: **jog** expects
-relative deltas around 64 (FLX4 wheel encoder behavior); **knob** reads
-absolute 0..127 values and tracks change internally. Bind a wheel CC
-as `jog`, bind a fader/knob CC as `knob`.
+Jog and Knob both bind to CC events. The difference: **jog** expects relative deltas around 64 (FLX4 wheel encoder behavior); **knob** reads absolute 0..127 values and tracks change internally. Bind a wheel CC as `jog`, bind a fader/knob CC as `knob`.
 
-`key` strings accept the `VK_*` constant name, the short alias (`SPACE`,
-`ENTER`, `LSHIFT`, `F1`), or single letters/digits (`A`, `7`).
+`key` strings accept the `VK_*` constant name, the short alias (`SPACE`, `ENTER`, `LSHIFT`, `F1`), or single letters/digits (`A`, `7`).
 
 ## FLX4 MIDI map (empirical, derived from sniffer)
 
@@ -198,15 +187,16 @@ Channels are 1-indexed (Pioneer convention).
 | Crossfader (14-bit)             | 5       | CC 0x02 MSB + 0x22 LSB  |
 | Browser knob / master section   | 5       | various                 |
 
-Note the jog wheel quirk: CC 0x21 reports relative deltas around a center
-of 64 (so 65 = one tick forward, 63 = one tick back). The wheel emits
-spurious 63/65 events when sitting still, so the engine applies a small
-deadzone before forwarding anything.
+Note the jog wheel quirk: CC 0x21 reports relative deltas around a center of 64 (so 65 = one tick forward, 63 = one tick back). The wheel emits spurious 63/65 events when sitting still, so the engine applies a small deadzone before forwarding anything.
 
 ## Anti-cheat note
 
-SendInput is fine for normal games, emulators, racing sims, rhythm
-games. Anti-cheat layers like Vanguard or Faceit's client block
-SendInput entirely. If you ever want those, the injection layer would
-need to swap to the Interception driver, which is a contained change
-inside `input.cpp`.
+SendInput is fine for normal games, emulators, racing sims, rhythm games. Anti-cheat layers like Vanguard or Faceit's client block SendInput entirely. If you ever want those, the injection layer would need to swap to the Interception driver, which is a contained change inside `input.cpp`.
+
+## Possible Features
+- these all rely on me actually wanting to continue this once i get the basic functionality working
+- Better UI
+- More controller support
+  - More input support
+  - Default profiles for controllers and games
+- Pushing to this repo more than 3 times
