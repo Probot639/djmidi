@@ -1,8 +1,8 @@
-// djmidi — FLX4 -> Windows keyboard/mouse router.
+// djmidi: FLX4 to Windows keyboard/mouse router.
 //
-// v0.7: JSON config + hot reload + minimal Win32 GUI. The MIDI callback
-// still runs the mapping inline (lowest latency); the GUI thread owns
-// the window, the jog poll timer, and the config-file mtime watcher.
+// The winmm callback dispatches the mapping inline (lowest latency we can
+// get without going to a kernel driver). The GUI thread owns the window,
+// the jog idle-release poll, and the config-file mtime watcher.
 
 #include "config.h"
 #include "gui.h"
@@ -62,7 +62,6 @@ bool load_and_apply(const std::string& path, std::string& error) {
 }
 
 static void on_midi(const MidiEvent& ev) {
-    // Hand a copy to the GUI for the live readout (and learn capture).
     gui_post_midi(ev);
 
     uint8_t type   = ev.status & 0xF0;
@@ -153,7 +152,7 @@ int main(int argc, char** argv) {
         return 2;
     }
 
-    std::printf("djmidi v0.7 starting.\n");
+    std::printf("djmidi v0.8 starting.\n");
     std::printf("  device : %d (matched on '%s')\n", dev, dev_match.c_str());
     std::printf("  config : %s\n", g_config_path.c_str());
     std::printf("  profile: %s\n", g_cfg.active_profile.c_str());

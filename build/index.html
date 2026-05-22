@@ -1,0 +1,1269 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>djmidi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Fira+Code:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #060606;
+      --win: #0d0d0d;
+      --panel: #131313;
+      --panel-2: #1a1a1a;
+      --panel-3: #232323;
+      --line: #2a2a2a;
+      --line-soft: #1d1d1d;
+      --text: #ececec;
+      --text-dim: #8e8e8e;
+      --text-faint: #565656;
+      --accent: #f4f4f4;
+      --accent-dim: #b4b4b4;
+      --display: 'Chakra Petch', sans-serif;
+      --mono: 'Fira Code', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0 }
+    html, body { height: 100% }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 26px;
+    }
+
+    ::selection { background: var(--accent); color: #000 }
+
+    /* window */
+    .win {
+      width: 100%;
+      max-width: 1180px;
+      max-height: calc(100vh - 52px);
+      background: var(--win);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 30px 80px -20px rgba(0,0,0,.8),
+                  0 0 0 1px rgba(255,255,255,.02) inset;
+    }
+
+    .titlebar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 15px;
+      background: linear-gradient(var(--panel), var(--win));
+      border-bottom: 1px solid var(--line);
+    }
+
+    .tb-name {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: .04em;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--accent);
+    }
+    .tb-name b { color: var(--text); font-weight: 700 }
+
+    .led {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(255,255,255,.4);
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1 }
+      50%      { opacity: .35 }
+    }
+
+    .tb-device {
+      font-size: 11px;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      padding: 4px 10px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .tb-device .led { width: 6px; height: 6px }
+
+    .tb-ctrls { margin-left: auto; display: flex; gap: 8px }
+    .tb-ctrls i {
+      width: 11px; height: 11px; border-radius: 50%;
+      background: #2a2a2a; display: block;
+    }
+
+    /* body grid */
+    .body {
+      display: grid;
+      grid-template-columns: 1fr 312px;
+      min-height: 0;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .rig-side {
+      padding: 20px;
+      border-right: 1px solid var(--line);
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .gui-side {
+      background: var(--panel);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .sect-tag {
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 10px;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .sect-tag::after {
+      content: ""; flex: 1; height: 1px; background: var(--line);
+    }
+    .sect-tag b { color: var(--text-dim); font-weight: 600 }
+
+    /* the rig */
+    .deckboard {
+      display: grid;
+      grid-template-columns: 1fr 152px 1fr;
+      gap: 16px;
+    }
+
+    .deck-col { display: flex; flex-direction: column; gap: 11px }
+
+    .deck-hd {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: .2em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent);
+    }
+    .deck-hd .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 6px currentColor;
+    }
+    .deck-hd .ch {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--text-faint);
+      letter-spacing: .08em;
+    }
+
+    .pad-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .ctl {
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--panel-2);
+      cursor: pointer;
+      position: relative;
+      transition: transform .07s, box-shadow .16s, background .16s, border-color .16s;
+      user-select: none;
+    }
+    .ctl:hover { transform: translateY(-2px) }
+
+    .pad {
+      aspect-ratio: 1.18 / 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 4px;
+    }
+    .pad .key {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 18px;
+      line-height: 1;
+      color: var(--text);
+    }
+    .pad .sub {
+      font-size: 7.5px;
+      letter-spacing: .06em;
+      color: var(--text-faint);
+    }
+
+    .ctl.flash {
+      background: var(--panel-3);
+      border-color: var(--accent);
+      box-shadow: 0 0 14px rgba(255,255,255,.16);
+    }
+    .ctl.armed {
+      border-style: dashed;
+      border-color: var(--accent);
+    }
+    .ctl.armed::after {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      border-radius: 4px;
+      box-shadow: 0 0 0 1px var(--accent), 0 0 12px rgba(255,255,255,.18);
+      animation: pulse 1s infinite;
+      pointer-events: none;
+    }
+
+    .transport {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+    .tbtn { padding: 8px 3px; text-align: center }
+    .tbtn .lab {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 9px;
+      letter-spacing: .07em;
+      color: var(--text-dim);
+    }
+    .tbtn .key {
+      display: block;
+      font-size: 10px;
+      font-weight: 600;
+      margin-top: 3px;
+      color: var(--accent);
+    }
+
+    .cjog {
+      width: 118px; height: 118px;
+      border-radius: 50%;
+      align-self: center;
+      background: radial-gradient(circle at 38% 32%, #2a2a2a, #0a0a0a 72%);
+      border: 1px solid var(--line);
+      position: relative;
+      cursor: pointer;
+      transition: box-shadow .16s;
+    }
+    .cjog .ring {
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      padding: 2px;
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      background: conic-gradient(from 0deg, var(--accent), transparent 150deg, var(--accent));
+      opacity: .6;
+    }
+    .cjog .plate {
+      position: absolute;
+      inset: 5px;
+      border-radius: 50%;
+      animation: spin linear infinite;
+    }
+    .j1 .plate { animation-duration: 7s }
+    .j2 .plate { animation-duration: 9s; animation-direction: reverse }
+    @keyframes spin { to { transform: rotate(360deg) } }
+
+    .cjog .mk {
+      position: absolute;
+      top: 6px;
+      left: calc(50% - 1.5px);
+      width: 3px;
+      height: 19px;
+      border-radius: 3px;
+      background: var(--accent);
+      box-shadow: 0 0 6px rgba(255,255,255,.4);
+    }
+    .cjog .face {
+      position: absolute;
+      inset: 30%;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 35%, #2a2a2a, #0c0c0c);
+      border: 1px solid rgba(255,255,255,.06);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1px;
+    }
+    .cjog .face .fk {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 11px;
+      color: var(--accent);
+    }
+    .cjog .face .fs {
+      font-size: 6.5px;
+      letter-spacing: .06em;
+      color: var(--text-faint);
+    }
+    .cjog.armed { border-color: var(--accent); border-style: dashed }
+
+    .jog-cap {
+      font-size: 8.5px;
+      text-align: center;
+      color: var(--text-faint);
+      letter-spacing: .07em;
+      margin-top: -4px;
+    }
+    .jog-cap b { color: var(--text-dim); font-weight: 500 }
+
+    /* mixer */
+    .mixer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 11px;
+      border-left: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      padding: 0 12px;
+    }
+    .mixer-hd {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 9px;
+      letter-spacing: .2em;
+      color: var(--text-dim);
+    }
+
+    .knob-row { display: flex; gap: 10px }
+    .knob {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      width: 42px;
+    }
+    .knob .dial {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      position: relative;
+      background: radial-gradient(circle at 38% 32%, #2a2a2a, #0c0c0c);
+      border: 1px solid var(--line);
+      transition: border-color .16s, box-shadow .16s;
+    }
+    .knob .dial::after {
+      content: "";
+      position: absolute;
+      top: 4px;
+      left: calc(50% - 1.5px);
+      width: 3px; height: 10px;
+      border-radius: 2px;
+      background: var(--text-faint);
+    }
+    .knob .kl {
+      font-size: 7.5px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      text-align: center;
+    }
+    .knob .kb {
+      font-size: 8px;
+      font-weight: 600;
+      letter-spacing: .03em;
+    }
+    .knob.mapped .kb       { color: var(--accent) }
+    .knob.unmapped .kb     { color: var(--text-faint) }
+    .knob.mapped .dial     { border-color: var(--accent-dim) }
+    .knob.mapped .dial::after { background: var(--accent) }
+    .knob:hover .dial      { box-shadow: 0 0 10px rgba(255,255,255,.12) }
+    .knob.flash .dial      { border-color: var(--accent); box-shadow: 0 0 12px rgba(255,255,255,.2) }
+    .knob.armed .dial      { border-color: var(--accent); border-style: dashed }
+
+    .faders { display: flex; gap: 18px; margin-top: 2px }
+    .fader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .fader .track {
+      width: 8px; height: 78px;
+      border-radius: 5px;
+      background: var(--panel-3);
+      border: 1px solid var(--line);
+      position: relative;
+    }
+    .fader .thumb {
+      position: absolute;
+      left: 50%; top: 42%;
+      transform: translate(-50%, -50%);
+      width: 26px; height: 13px;
+      border-radius: 3px;
+      background: linear-gradient(#2c2c2c, #161616);
+      border: 1px solid var(--line);
+    }
+    .fader.mapped .thumb { border-color: var(--accent-dim) }
+    .fader:hover .thumb  { box-shadow: 0 0 10px rgba(255,255,255,.18) }
+    .fader.flash .thumb  { border-color: var(--accent); box-shadow: 0 0 12px rgba(255,255,255,.22) }
+    .fader.armed .track  { border-color: var(--accent); border-style: dashed }
+    .fader .fl {
+      font-size: 7.5px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+    .fader .fb { font-size: 8px; font-weight: 600 }
+    .fader.mapped .fb   { color: var(--accent) }
+    .fader.unmapped .fb { color: var(--text-faint) }
+
+    .xfader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      cursor: pointer;
+    }
+    .xfader .xt {
+      width: 100%; height: 8px;
+      border-radius: 5px;
+      background: var(--panel-3);
+      border: 1px solid var(--line);
+      position: relative;
+    }
+    .xfader .xh {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 13px; height: 22px;
+      border-radius: 3px;
+      background: linear-gradient(#2c2c2c, #161616);
+      border: 1px solid var(--line);
+    }
+    .xfader .xl {
+      font-size: 7.5px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+    .xfader.armed .xt { border-color: var(--accent); border-style: dashed }
+
+    /* legend */
+    .legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line-soft);
+      font-size: 10px;
+      color: var(--text-faint);
+      letter-spacing: .04em;
+    }
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend i {
+      width: 9px; height: 9px;
+      border-radius: 2px;
+      display: block;
+    }
+    .legend .i-mapped   { background: var(--accent) }
+    .legend .i-unmapped { background: var(--panel-3); border: 1px solid var(--line) }
+    .legend .i-armed    { background: transparent; border: 1px dashed var(--accent) }
+
+    .hint {
+      font-size: 10.5px;
+      color: var(--text-faint);
+      margin-top: 9px;
+      line-height: 1.55;
+    }
+    .hint code {
+      font-family: var(--mono);
+      color: var(--text-dim);
+      background: var(--panel-2);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+
+    /* gui panel (gui.cpp) */
+    .gui-block {
+      padding: 16px 16px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .gui-block:last-of-type { border-bottom: none }
+
+    .gb-title {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 10px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 11px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .gb-title .led { width: 6px; height: 6px }
+
+    /* status */
+    .status-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 7px 12px;
+      font-size: 11.5px;
+    }
+    .status-grid dt {
+      color: var(--text-faint);
+      letter-spacing: .04em;
+    }
+    .status-grid dd {
+      text-align: right;
+      color: var(--text);
+      word-break: break-all;
+    }
+    .status-grid dd b  { color: var(--accent); font-weight: 600 }
+    .status-grid dd em { color: var(--text-faint); font-style: normal }
+
+    /* readout */
+    .readout {
+      background: #050505;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      height: 260px;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 9px 10px;
+      font-size: 10.5px;
+      line-height: 1.7;
+    }
+    .readout::-webkit-scrollbar { width: 7px }
+    .readout::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px }
+
+    .rl       { white-space: nowrap }
+    .rl .ts   { color: var(--text-faint) }
+    .rl .ch   { color: var(--text-dim) }
+    .rl .on   { color: var(--accent) }
+    .rl .of   { color: var(--text-faint) }
+    .rl .cc   { color: var(--text-dim) }
+    .rl .v    { color: var(--text) }
+    .rl .bind { color: var(--text-dim) }
+    .rl .bind b { color: var(--accent); font-weight: 500 }
+    .rl .drop { color: var(--text-faint) }
+    .rl.sys   { color: var(--text-faint) }
+    .rl.sys b { color: var(--accent); font-weight: 500 }
+    .rl.warn  { color: var(--text-dim) }
+    .rl.warn b{ color: var(--accent) }
+
+    /* buttons */
+    .gui-actions { display: flex; flex-direction: column; gap: 8px }
+
+    .gbtn {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .07em;
+      padding: 10px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: left;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      transition: all .14s;
+    }
+    .gbtn:hover { border-color: var(--text-dim); transform: translateY(-1px) }
+    .gbtn .gi   { font-size: 13px; width: 15px; text-align: center; color: var(--text-dim) }
+    .gbtn.learn.on {
+      border-color: var(--accent);
+      background: rgba(255,255,255,.05);
+      color: var(--accent);
+    }
+    .gbtn.learn.on .gi { color: var(--accent); animation: pulse 1s infinite }
+
+    /* learn panel */
+    .learn {
+      margin-top: 9px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #050505;
+      padding: 11px;
+      font-size: 10.5px;
+    }
+    .learn.idle { opacity: .45 }
+
+    .learn .lstep {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .learn .lstep:last-child { margin-bottom: 0 }
+    .learn .lnum {
+      width: 16px; height: 16px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 700;
+      background: var(--panel-3);
+      color: var(--text-faint);
+      border: 1px solid var(--line);
+    }
+    .learn .lstep.active .lnum { background: var(--accent); color: #000; border-color: var(--accent) }
+    .learn .lstep.done   .lnum { background: var(--text-dim); color: #000; border-color: var(--text-dim) }
+
+    .learn .ltext   { color: var(--text-dim); line-height: 1.45 }
+    .learn .ltext b { color: var(--text) }
+    .learn .ltext .src { color: var(--accent) }
+
+    .keybox {
+      margin-top: 3px;
+      font-family: var(--mono);
+      font-size: 11px;
+      border: 1px dashed var(--line);
+      border-radius: 3px;
+      padding: 7px 10px;
+      color: var(--text-faint);
+      cursor: not-allowed;
+      background: var(--panel);
+      outline: none;
+      transition: all .14s;
+    }
+    .keybox.live {
+      cursor: text;
+      border-color: var(--accent);
+      border-style: solid;
+      color: var(--accent);
+      background: rgba(255,255,255,.04);
+    }
+    .keybox.live:focus { box-shadow: 0 0 12px rgba(255,255,255,.18) }
+    .keybox.set {
+      border-style: solid;
+      border-color: var(--text-dim);
+      color: var(--text);
+      background: rgba(255,255,255,.03);
+      cursor: default;
+    }
+
+    .learn .lresult {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--line);
+      font-size: 10px;
+      color: var(--text-faint);
+      line-height: 1.55;
+    }
+    .learn .lresult code { color: var(--accent) }
+    .learn .lresult.hidden { display: none }
+
+    .gui-foot {
+      padding: 9px 16px;
+      border-top: 1px solid var(--line);
+      font-size: 9px;
+      letter-spacing: .06em;
+      color: var(--text-faint);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .gui-foot b { color: var(--text-dim) }
+    .gui-foot a { color: var(--text-dim); text-decoration: none }
+    .gui-foot a:hover { color: var(--accent) }
+
+    @media (max-width: 880px) {
+      body { padding: 12px }
+      .body { grid-template-columns: 1fr }
+      .gui-side { border-top: 1px solid var(--line) }
+      .rig-side { border-right: none }
+      .deckboard { grid-template-columns: 1fr }
+      .mixer { border: 1px solid var(--line); border-radius: 4px; padding: 14px }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="win">
+
+    <!-- title bar -->
+    <div class="titlebar">
+      <div class="tb-name"><span class="led"></span>d<b>jmidi</b></div>
+      <div class="tb-device"><span class="led"></span>DDJ-FLX4 · connected</div>
+      <div class="tb-ctrls"><i></i><i></i><i></i></div>
+    </div>
+
+    <div class="body">
+
+      <!-- the rig -->
+      <div class="rig-side">
+        <div class="sect-tag">the rig &nbsp;·&nbsp; <b>active profile: default</b></div>
+
+        <div class="deckboard">
+
+          <!-- deck 1 -->
+          <div class="deck-col">
+            <div class="deck-hd"><span class="dot"></span>DECK 1<span class="ch">ch 1 · pads ch 8</span></div>
+            <div class="pad-grid" id="pads1"></div>
+            <div class="transport" id="trans1"></div>
+            <div class="cjog j1" data-ctl data-name="Jog platter · Deck 1"
+              data-msg="CH1 NOTEON D1=0x36" data-kind="note" data-bind="touch &rarr; mouse_button right">
+              <div class="ring"></div>
+              <div class="plate"><div class="mk"></div></div>
+              <div class="face"><span class="fk">RMB</span><span class="fs">+ MOUSE X</span></div>
+            </div>
+            <div class="jog-cap">touch <b>RMB</b> · spin <b>jog mouse_x</b></div>
+          </div>
+
+          <!-- mixer -->
+          <div class="mixer">
+            <div class="mixer-hd">MIXER</div>
+            <div class="knob-row" id="knobsTop"></div>
+            <div class="knob-row" id="knobsBot"></div>
+            <div class="faders" id="faders"></div>
+            <div class="xfader" data-ctl data-name="Crossfader"
+              data-msg="CH5 CC D1=0x02" data-kind="cc" data-bind="">
+              <div class="xt"><div class="xh"></div></div>
+              <span class="xl">xfader (unmapped)</span>
+            </div>
+          </div>
+
+          <!-- deck 2 -->
+          <div class="deck-col">
+            <div class="deck-hd"><span class="dot"></span>DECK 2<span class="ch">ch 2 · pads ch 10</span></div>
+            <div class="pad-grid" id="pads2"></div>
+            <div class="transport" id="trans2"></div>
+            <div class="cjog j2" data-ctl data-name="Jog platter · Deck 2"
+              data-msg="CH2 NOTEON D1=0x36" data-kind="note" data-bind="touch &rarr; mouse_button left">
+              <div class="ring"></div>
+              <div class="plate"><div class="mk"></div></div>
+              <div class="face"><span class="fk">LMB</span><span class="fs">+ A / D</span></div>
+            </div>
+            <div class="jog-cap">touch <b>LMB</b> · spin <b>jog held_key A/D</b></div>
+          </div>
+        </div>
+
+        <div class="legend">
+          <span><i class="i-mapped"></i> mapped</span>
+          <span><i class="i-unmapped"></i> unmapped</span>
+          <span><i class="i-armed"></i> learn target</span>
+        </div>
+        <div class="hint">Touch the FLX4. Mapped controls flash, unmapped events scroll past tagged <code>unmapped</code>.</div>
+      </div>
+
+      <!-- gui panel -->
+      <div class="gui-side">
+
+        <div class="gui-block">
+          <div class="gb-title"><span class="led"></span>status</div>
+          <dl class="status-grid">
+            <dt>profile</dt>     <dd id="stProfile">default</dd>
+            <dt>config path</dt> <dd id="stPath">config\default.json</dd>
+            <dt>bindings</dt>    <dd id="stBindings"><b>29</b> &nbsp;<em>24 notes · 5 ccs</em></dd>
+            <dt>watcher</dt>     <dd id="stWatch">mtime poll · 500&nbsp;ms</dd>
+          </dl>
+        </div>
+
+        <div class="gui-block" style="display:flex;flex-direction:column">
+          <div class="gb-title">live midi readout</div>
+          <div class="readout" id="readout"></div>
+        </div>
+
+        <div class="gui-block">
+          <div class="gb-title">actions</div>
+          <div class="gui-actions">
+            <button class="gbtn reload" id="btnReload">
+              <span class="gi">&#x21BB;</span> Reload config
+            </button>
+            <button class="gbtn learn" id="btnLearn">
+              <span class="gi">&#9678;</span> Start MIDI learn
+            </button>
+          </div>
+
+          <div class="learn idle" id="learnPanel">
+            <div class="lstep" id="ls1">
+              <span class="lnum">1</span>
+              <span class="ltext" id="lt1">Hit <b>Start MIDI learn</b> to arm.</span>
+            </div>
+            <div class="lstep" id="ls2">
+              <span class="lnum">2</span>
+              <span class="ltext" id="lt2">Hit any pad / button / knob on the FLX4.</span>
+            </div>
+            <div class="lstep" id="ls3">
+              <span class="lnum">3</span>
+              <div style="flex:1">
+                <span class="ltext">Click the box and press the key to bind:</span>
+                <div class="keybox" id="keybox" tabindex="-1">(locked)</div>
+              </div>
+            </div>
+            <div class="lresult hidden" id="lresult"></div>
+          </div>
+        </div>
+
+        <div class="gui-foot">
+          <span><b>djmidi.exe</b> · trackmania, but with dj decks</span>
+          <a href="https://github.com/Probot639/djmidi" target="_blank" rel="noopener">repo &#x2197;</a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // control definitions, mirror config/default.json
+    const PADS1 = [0,1,2,3,4,5,6,7].map(i => ({
+      name: 'Hot cue ' + (i+1) + ' · Deck 1', kind: 'note',
+      msg: 'CH8 NOTEON D1=0x0' + i, key: String(i+1),
+      bind: 'key_tap &rarr; "' + (i+1) + '"'
+    }));
+    const PADS2 = [0,1,2,3,4,5,6,7].map(i => ({
+      name: 'Hot cue ' + (i+1) + ' · Deck 2', kind: 'note',
+      msg: 'CH10 NOTEON D1=0x0' + i, key: 'ABCDEFGH'[i],
+      bind: 'key_tap &rarr; "' + 'ABCDEFGH'[i] + '"'
+    }));
+    const TRANS1 = [
+      {name:'Play · Deck 1', kind:'note', msg:'CH1 NOTEON D1=0x0B', lab:'PLAY', key:'SPACE', bind:'key_tap &rarr; VK_SPACE'},
+      {name:'Cue · Deck 1',  kind:'note', msg:'CH1 NOTEON D1=0x0C', lab:'CUE',  key:'ENTER', bind:'key_tap &rarr; VK_RETURN'},
+      {name:'Sync · Deck 1', kind:'note', msg:'CH1 NOTEON D1=0x58', lab:'SYNC', key:'BKSP',  bind:'key_tap &rarr; VK_BACK'},
+    ];
+    const TRANS2 = [
+      {name:'Play · Deck 2', kind:'note', msg:'CH2 NOTEON D1=0x0B', lab:'PLAY', key:'TAB', bind:'key_tap &rarr; VK_TAB'},
+      {name:'Cue · Deck 2',  kind:'note', msg:'CH2 NOTEON D1=0x0C', lab:'CUE',  key:'ESC', bind:'key_tap &rarr; VK_ESCAPE'},
+      {name:'Sync · Deck 2', kind:'note', msg:'CH2 NOTEON D1=0x58', lab:'SYNC', key:'DEL', bind:'key_tap &rarr; VK_DELETE'},
+    ];
+    const KNOBS_TOP = [
+      {name:'EQ Hi · Deck 1',  msg:'CH1 CC D1=0x13', kind:'cc', kl:'HI',  kb:'UP/DN', bind:'knob direction_tap &rarr; VK_UP / VK_DOWN', mapped:true},
+      {name:'EQ Mid · Deck 1', msg:'CH1 CC D1=0x0F', kind:'cc', kl:'MID', kb:'n/a',   bind:'', mapped:false},
+      {name:'EQ Low · Deck 1', msg:'CH1 CC D1=0x0B', kind:'cc', kl:'LOW', kb:'n/a',   bind:'', mapped:false},
+    ];
+    const KNOBS_BOT = [
+      {name:'Filter · Deck 1', msg:'CH1 CC D1=0x04', kind:'cc', kl:'FILTER', kb:'WHEEL', bind:'knob wheel_scroll &rarr; mouse wheel', mapped:true},
+      {name:'Browser knob',    msg:'CH5 CC D1=0x40', kind:'cc', kl:'BROWSE', kb:'n/a',   bind:'', mapped:false},
+    ];
+    const FADERS = [
+      {name:'Channel fader · Deck 1', msg:'CH1 CC D1=0x07', kind:'cc', fl:'CH1', fb:'S/W', bind:'knob threshold &rarr; S (low) / W (high)', mapped:true},
+      {name:'Channel fader · Deck 2', msg:'CH2 CC D1=0x07', kind:'cc', fl:'CH2', fb:'n/a', bind:'', mapped:false},
+    ];
+
+    // render pads
+    function renderPads(hostId, list) {
+      const host = document.getElementById(hostId);
+      list.forEach(p => {
+        const el = document.createElement('div');
+        el.className = 'ctl pad';
+        el.dataset.ctl  = '';
+        el.dataset.name = p.name;
+        el.dataset.msg  = p.msg;
+        el.dataset.kind = p.kind;
+        el.dataset.bind = p.bind;
+        el.innerHTML = '<span class="key">' + p.key + '</span><span class="sub">key_tap</span>';
+        host.appendChild(el);
+      });
+    }
+    renderPads('pads1', PADS1);
+    renderPads('pads2', PADS2);
+
+    // render transport
+    function renderTransport(hostId, list) {
+      const host = document.getElementById(hostId);
+      list.forEach(t => {
+        const el = document.createElement('div');
+        el.className = 'ctl tbtn';
+        el.dataset.ctl  = '';
+        el.dataset.name = t.name;
+        el.dataset.msg  = t.msg;
+        el.dataset.kind = t.kind;
+        el.dataset.bind = t.bind;
+        el.innerHTML = '<span class="lab">' + t.lab + '</span><span class="key">' + t.key + '</span>';
+        host.appendChild(el);
+      });
+    }
+    renderTransport('trans1', TRANS1);
+    renderTransport('trans2', TRANS2);
+
+    // render knobs
+    function renderKnobs(hostId, list) {
+      const host = document.getElementById(hostId);
+      list.forEach(k => {
+        const el = document.createElement('div');
+        el.className = 'knob ' + (k.mapped ? 'mapped' : 'unmapped');
+        el.dataset.ctl  = '';
+        el.dataset.name = k.name;
+        el.dataset.msg  = k.msg;
+        el.dataset.kind = k.kind;
+        el.dataset.bind = k.bind;
+        el.innerHTML = '<div class="dial"></div>' +
+          '<span class="kb">' + k.kb + '</span>' +
+          '<span class="kl">' + k.kl + '</span>';
+        host.appendChild(el);
+      });
+    }
+    renderKnobs('knobsTop', KNOBS_TOP);
+    renderKnobs('knobsBot', KNOBS_BOT);
+
+    // render faders
+    (function () {
+      const host = document.getElementById('faders');
+      FADERS.forEach(f => {
+        const el = document.createElement('div');
+        el.className = 'fader ' + (f.mapped ? 'mapped' : 'unmapped');
+        el.dataset.ctl  = '';
+        el.dataset.name = f.name;
+        el.dataset.msg  = f.msg;
+        el.dataset.kind = f.kind;
+        el.dataset.bind = f.bind;
+        el.innerHTML = '<div class="track"><div class="thumb"></div></div>' +
+          '<span class="fb">' + f.fb + '</span><span class="fl">' + f.fl + '</span>';
+        host.appendChild(el);
+      });
+    })();
+
+    // live midi readout
+    const readout = document.getElementById('readout');
+    function logSys(html, cls) {
+      const d = document.createElement('div');
+      d.className = 'rl sys' + (cls ? ' ' + cls : '');
+      d.innerHTML = html;
+      readout.appendChild(d);
+      trim();
+    }
+    function trim() {
+      while (readout.children.length > 250) readout.removeChild(readout.firstChild);
+      readout.scrollTop = readout.scrollHeight;
+    }
+
+    logSys('djmidi.exe loaded', '');
+    logSys('listening on <b>DDJ-FLX4</b>, waiting for input');
+
+    // binding count, live-updated by MIDI learn
+    let notesCount = 24, ccsCount = 5;
+    function refreshBindings() {
+      document.getElementById('stBindings').innerHTML =
+        '<b>' + (notesCount + ccsCount) + '</b> &nbsp;<em>' + notesCount + ' notes · ' + ccsCount + ' ccs</em>';
+    }
+
+    // midi learn state machine
+    const btnLearn   = document.getElementById('btnLearn');
+    const learnPanel = document.getElementById('learnPanel');
+    const keybox     = document.getElementById('keybox');
+    const lresult    = document.getElementById('lresult');
+    const ls = [null,
+                document.getElementById('ls1'),
+                document.getElementById('ls2'),
+                document.getElementById('ls3')];
+    const lt2 = document.getElementById('lt2');
+
+    let learnState = 'off';   // off | armed | keycapture | done
+    let learnTarget = null;
+
+    function setLearn(state) {
+      learnState = state;
+      ls.forEach(s => s && s.classList.remove('active', 'done'));
+
+      if (state === 'off') {
+        btnLearn.classList.remove('on');
+        btnLearn.innerHTML = '<span class="gi">&#9678;</span> Start MIDI learn';
+        learnPanel.classList.add('idle');
+        lt2.innerHTML = 'Hit any pad / button / knob on the FLX4.';
+        keybox.className = 'keybox';
+        keybox.textContent = '(locked)';
+        keybox.tabIndex = -1;
+        lresult.classList.add('hidden');
+        clearArmed();
+        learnTarget = null;
+        return;
+      }
+
+      learnPanel.classList.remove('idle');
+      btnLearn.classList.add('on');
+      btnLearn.innerHTML = '<span class="gi">&#9678;</span> Cancel MIDI learn';
+
+      if (state === 'armed') {
+        ls[1].classList.add('done');
+        ls[2].classList.add('active');
+        lt2.innerHTML = 'Hit any pad / button / knob on the FLX4.';
+        keybox.className = 'keybox';
+        keybox.textContent = '(locked)';
+        keybox.tabIndex = -1;
+        lresult.classList.add('hidden');
+        armAllControls(true);
+        logSys('MIDI learn armed, waiting for controller input', 'warn');
+      }
+      if (state === 'keycapture') {
+        ls[1].classList.add('done');
+        ls[2].classList.add('done');
+        ls[3].classList.add('active');
+        keybox.className = 'keybox live';
+        keybox.textContent = 'click here, then press a key';
+        keybox.tabIndex = 0;
+        armAllControls(false);
+      }
+      if (state === 'done') {
+        ls[1].classList.add('done');
+        ls[2].classList.add('done');
+        ls[3].classList.add('done');
+      }
+    }
+
+    function armAllControls(on) {
+      document.querySelectorAll('[data-ctl]').forEach(c => c.classList.toggle('armed', on));
+    }
+    function clearArmed() {
+      document.querySelectorAll('[data-ctl]').forEach(c => c.classList.remove('armed'));
+    }
+
+    btnLearn.addEventListener('click', () => {
+      setLearn(learnState === 'off' ? 'armed' : 'off');
+    });
+
+    // key capture box
+    const KEYMAP = {
+      ' ':'VK_SPACE', 'Enter':'VK_RETURN', 'Backspace':'VK_BACK', 'Tab':'VK_TAB',
+      'Escape':'VK_ESCAPE', 'Delete':'VK_DELETE',
+      'ArrowUp':'VK_UP', 'ArrowDown':'VK_DOWN', 'ArrowLeft':'VK_LEFT', 'ArrowRight':'VK_RIGHT',
+      'Shift':'VK_LSHIFT', 'Control':'VK_LCONTROL', 'Alt':'VK_LMENU',
+    };
+    function vkName(e) {
+      if (KEYMAP[e.key]) return KEYMAP[e.key];
+      if (/^[a-z]$/i.test(e.key)) return e.key.toUpperCase();
+      if (/^[0-9]$/.test(e.key)) return e.key;
+      if (/^F([1-9]|1[0-2])$/.test(e.key)) return 'VK_' + e.key;
+      return e.key.toUpperCase();
+    }
+    keybox.addEventListener('keydown', e => {
+      if (learnState !== 'keycapture') return;
+      e.preventDefault();
+      const vk = vkName(e);
+      keybox.className = 'keybox set';
+      keybox.textContent = 'key: ' + vk;
+      finishLearn(vk);
+    });
+
+    function finishLearn(vk) {
+      setLearn('done');
+      const isNote = learnTarget && learnTarget.dataset.kind === 'note';
+      if (isNote) notesCount++; else ccsCount++;
+      refreshBindings();
+      if (learnTarget) {
+        const keyEl = learnTarget.querySelector('.key');
+        if (keyEl) keyEl.textContent = vk.replace(/^VK_/, '');
+        const kbEl = learnTarget.querySelector('.kb');
+        if (kbEl) { kbEl.textContent = vk.replace(/^VK_/, ''); learnTarget.classList.remove('unmapped'); learnTarget.classList.add('mapped'); }
+        const fbEl = learnTarget.querySelector('.fb');
+        if (fbEl) { fbEl.textContent = vk.replace(/^VK_/, ''); learnTarget.classList.remove('unmapped'); learnTarget.classList.add('mapped'); }
+      }
+      const srcName = learnTarget ? learnTarget.dataset.name : 'control';
+      const srcMsg  = learnTarget ? learnTarget.dataset.msg  : '';
+      lresult.classList.remove('hidden');
+      lresult.innerHTML =
+        '<b style="color:var(--accent)">&#10003; binding saved</b><br>' +
+        'appended to active profile &rarr; ' + (isNote ? '"notes"' : '"ccs"') + '<br>' +
+        '<code>{ "type":"key_tap", "key":"' + vk + '" }</code>';
+      logSys('learn: <b>' + srcName + '</b> [' + srcMsg + '] bound to <b>' + vk + '</b>', 'warn');
+      setTimeout(() => { if (learnState === 'done') setLearn('off'); }, 5200);
+    }
+
+    // reload config button (the bridge below also wires this to C++)
+    document.getElementById('btnReload').addEventListener('click', () => {
+      const btn = document.getElementById('btnReload');
+      btn.querySelector('.gi').style.transition = 'transform .5s';
+      btn.querySelector('.gi').style.transform = 'rotate(360deg)';
+      setTimeout(() => { btn.querySelector('.gi').style.transform = ''; }, 520);
+    });
+
+    refreshBindings();
+  </script>
+
+  <script>
+    // C++ bridge. Throws away the click-driven simulation above and wires the
+    // page to real MIDI events from the engine (gui.cpp). webview.bind names:
+    // app_ready, reload, start_learn, cancel_learn, save_binding.
+    (function () {
+      // Strip the simulation click handlers by cloning every [data-ctl].
+      // Easier than tracking which listeners the script above attached.
+      document.querySelectorAll('[data-ctl]').forEach(c => {
+        const clone = c.cloneNode(true);
+        c.parentNode.replaceChild(clone, c);
+      });
+      // Re-add flash-only feedback + the cjog hover spin (lost in the clone).
+      document.querySelectorAll('[data-ctl]').forEach(c => {
+        c.addEventListener('click', () => {
+          c.classList.add('flash');
+          setTimeout(() => c.classList.remove('flash'), 360);
+        });
+      });
+      document.querySelectorAll('.cjog').forEach(j => {
+        const plate = j.querySelector('.plate');
+        const base = getComputedStyle(plate).animationDuration;
+        j.addEventListener('mouseenter', () => plate.style.animationDuration = '1.4s');
+        j.addEventListener('mouseleave', () => plate.style.animationDuration = base);
+      });
+
+      // (ch, kind, d1) -> DOM element. data-msg is "CH8 NOTEON D1=0x02".
+      const ctlMap = new Map();
+      document.querySelectorAll('[data-ctl]').forEach(c => {
+        const m = c.dataset.msg;
+        if (!m) return;
+        const parts = m.split(' ');
+        const ch    = parseInt(parts[0].slice(2), 10);
+        const kind  = parts[1].startsWith('NOTE') ? 'note' : 'cc';
+        const dm    = parts[2].match(/0x([0-9a-f]+)/i);
+        const d1    = dm ? parseInt(dm[1], 16) : 0;
+        ctlMap.set(ch + ':' + kind + ':' + d1, c);
+      });
+      const findCtl = (ch, kind, d1) => ctlMap.get(ch + ':' + kind + ':' + d1);
+
+      // Real readout, replaces the simulated logEvent. realClock is just a
+      // monotonic counter, not a real ms timestamp (would need C++ to send it).
+      let realClock = 0;
+      function logRealMidi(status, ch, d1, d2) {
+        const type = status & 0xF0;
+        const kindCls  = type === 0xB0 ? 'cc' : (type === 0x80 ? 'of' : 'on');
+        const kindName =
+          type === 0x90 ? 'NOTEON' :
+          type === 0x80 ? 'NOTEOF' :
+          type === 0xB0 ? 'CC    ' : '0x' + type.toString(16).padStart(2, '0').toUpperCase();
+        realClock += 1;
+        const d1h  = '0x' + d1.toString(16).padStart(2, '0').toUpperCase();
+        const ctl  = findCtl(ch, type === 0xB0 ? 'cc' : 'note', d1);
+        const bind = ctl ? ctl.dataset.bind : '';
+        let line =
+          '<span class="ts">[' + String(realClock).padStart(8, ' ') + ']</span> ' +
+          '<span class="ch">CH' + ch + '</span> ' +
+          '<span class="' + kindCls + '">' + kindName + '</span> ' +
+          'D1=' + d1h + ' D2=<span class="v">' + String(d2).padStart(3, ' ') + '</span>';
+        if (bind) line += '  <span class="bind">&rarr; <b>' + bind + '</b></span>';
+        else      line += '  <span class="drop">&rarr; unmapped</span>';
+        const div = document.createElement('div');
+        div.className = 'rl';
+        div.innerHTML = line;
+        readout.appendChild(div);
+        while (readout.children.length > 250) readout.removeChild(readout.firstChild);
+        readout.scrollTop = readout.scrollHeight;
+      }
+
+      // Incoming from C++ (gui_post_midi + push_status + push_sys_log).
+      window.djmidi = window.djmidi || {};
+      let learnCapture = null;
+
+      window.djmidi.onMidi = function (status, ch, d1, d2) {
+        logRealMidi(status, ch, d1, d2);
+        const type = status & 0xF0;
+        const ctl  = findCtl(ch, type === 0xB0 ? 'cc' : 'note', d1);
+        if (ctl && ((type === 0x90 && d2 > 0) || type === 0xB0)) {
+          ctl.classList.add('flash');
+          setTimeout(() => ctl.classList.remove('flash'), 360);
+        }
+      };
+
+      window.djmidi.onLearnCapture = function (ch, d1, kind) {
+        learnCapture = { ch: ch, d1: d1, kind: kind };
+        learnTarget  = findCtl(ch, kind, d1) || null;
+        ls.forEach(s => s && s.classList.remove('active'));
+        ls[1].classList.add('done');
+        ls[2].classList.add('done');
+        ls[3].classList.add('active');
+        const d1h = '0x' + d1.toString(16).padStart(2, '0').toUpperCase();
+        lt2.innerHTML = 'captured <span class="src">' + kind.toUpperCase() +
+                        ' CH' + ch + ' D1=' + d1h + '</span>';
+        learnState = 'keycapture';
+        keybox.className = 'keybox live';
+        keybox.textContent = 'click here, then press a key';
+        keybox.tabIndex = 0;
+        keybox.focus();
+        clearArmed();
+        logSys('learn captured <b>' + kind.toUpperCase() + ' CH' + ch + ' D1=' + d1h + '</b>', 'warn');
+      };
+
+      window.djmidi.onStatus = function (info) {
+        const stProfile  = document.getElementById('stProfile');
+        const stPath     = document.getElementById('stPath');
+        const stBindings = document.getElementById('stBindings');
+        if (stProfile)  stProfile.textContent = info.profile     || '?';
+        if (stPath)     stPath.textContent    = info.config_path || '?';
+        if (stBindings) {
+          notesCount = info.notes || 0;
+          ccsCount   = info.ccs   || 0;
+          stBindings.innerHTML = '<b>' + (notesCount + ccsCount) +
+            '</b> &nbsp;<em>' + notesCount + ' notes &middot; ' + ccsCount + ' ccs</em>';
+        }
+      };
+
+      window.djmidi.onSysLog = function (text) { logSys(text); };
+
+      // Outgoing to C++. We wrap setLearn and finishLearn rather than replacing
+      // the existing button/keydown handlers, since both live in closures above.
+      const _origSetLearn = setLearn;
+      setLearn = function (state) {
+        const prev = learnState;
+        if (state === 'armed' && prev === 'off' && window.start_learn) {
+          window.start_learn();
+        } else if (state === 'off' && prev !== 'off' && prev !== 'done' && window.cancel_learn) {
+          window.cancel_learn();
+        }
+        _origSetLearn(state);
+      };
+
+      const _origFinishLearn = finishLearn;
+      finishLearn = function (vk) {
+        if (!window.save_binding || !learnCapture) {
+          _origFinishLearn(vk);
+          return;
+        }
+        const cap = learnCapture;
+        window.save_binding(cap.ch, cap.d1, cap.kind, vk).then(function () {
+          _origFinishLearn(vk);
+          learnCapture = null;
+        }).catch(function (err) {
+          lresult.classList.remove('hidden');
+          lresult.innerHTML = '<b style="color:var(--text)">save failed:</b> ' +
+            (typeof err === 'string' ? err : JSON.stringify(err));
+          setLearn('off');
+          learnCapture = null;
+        });
+      };
+
+      document.getElementById('btnReload').addEventListener('click', function () {
+        if (window.reload) window.reload();
+      });
+
+      if (window.app_ready) window.app_ready();
+    })();
+  </script>
+</body>
+
+</html>

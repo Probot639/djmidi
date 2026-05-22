@@ -14,10 +14,6 @@ using nlohmann::json;
 
 namespace djmidi {
 
-// ------------------------------------------------------------------
-// Small helpers
-// ------------------------------------------------------------------
-
 static std::string to_upper(std::string s) {
     std::transform(s.begin(), s.end(), s.begin(),
                    [](unsigned char c){ return std::toupper(c); });
@@ -41,11 +37,7 @@ static uint16_t parse_bind_key(const std::string& s) {
     return bind_key(static_cast<unsigned>(ch), static_cast<unsigned>(num));
 }
 
-// ------------------------------------------------------------------
-// VK lookup
-// ------------------------------------------------------------------
-// Not exhaustive — extend as needed. Match by upper-cased name.
-
+// VK lookup. Not exhaustive, extend as needed. Match is upper-cased.
 WORD vk_from_string(const std::string& s_in) {
     std::string s = to_upper(s_in);
     if (s.empty()) return 0;
@@ -97,10 +89,6 @@ WORD vk_from_string(const std::string& s_in) {
     auto it = table.find(s);
     return it == table.end() ? WORD{0} : it->second;
 }
-
-// ------------------------------------------------------------------
-// Action / Profile parsing
-// ------------------------------------------------------------------
 
 static MouseBtn parse_mouse_btn(const std::string& s) {
     std::string u = to_upper(s);
@@ -192,14 +180,6 @@ static Profile parse_profile(const json& j) {
     }
     return p;
 }
-
-// ------------------------------------------------------------------
-// Public loader
-// ------------------------------------------------------------------
-
-// ------------------------------------------------------------------
-// Reverse VK lookup + Config -> JSON serialization
-// ------------------------------------------------------------------
 
 std::string vk_to_string(WORD vk) {
     if ((vk >= '0' && vk <= '9') || (vk >= 'A' && vk <= 'Z'))

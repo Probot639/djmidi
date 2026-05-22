@@ -1,20 +1,23 @@
-# djmidi — MinGW-w64 cross-compile from WSL.
+# djmidi: MinGW-w64 cross-compile from WSL.
 # tested on debian/ubuntu with `apt install mingw-w64`.
 
 CXX      := x86_64-w64-mingw32-g++
-CXXFLAGS := -std=c++17 -O2 -Wall -Wextra -Isrc -Ithird_party
-LDFLAGS  := -lwinmm -lgdi32 -luser32 -static-libgcc -static-libstdc++ -static
+CXXFLAGS := -std=c++17 -O2 -Wall -Wextra -Wno-cast-function-type -Isrc -Ithird_party -Ithird_party/webview
+# WebView2 needs ole32/oleaut32/shlwapi/advapi32/version on the link line.
+LDFLAGS  := -lwinmm -lgdi32 -luser32 -lole32 -loleaut32 -lshlwapi \
+            -lversion -ladvapi32 -static-libgcc -static-libstdc++ -static
 
 BUILD := build
 JSON_URL := https://github.com/nlohmann/json/releases/download/v3.11.3/json.hpp
 JSON_HDR := third_party/nlohmann/json.hpp
+WV2_DLL  := third_party/webview/WebView2Loader.dll
 
 .PHONY: all clean sniff djmidi
 
-all: $(BUILD)/sniff.exe $(BUILD)/djmidi.exe
+all: $(BUILD)/sniff.exe $(BUILD)/djmidi.exe $(BUILD)/WebView2Loader.dll $(BUILD)/index.html
 
 sniff:  $(BUILD)/sniff.exe
-djmidi: $(BUILD)/djmidi.exe
+djmidi: $(BUILD)/djmidi.exe $(BUILD)/WebView2Loader.dll $(BUILD)/index.html
 
 # Fetch the single-header JSON lib on demand. ~1MB, one HTTP GET.
 $(JSON_HDR):
@@ -33,11 +36,20 @@ $(BUILD)/djmidi.exe: \
 		src/config.cpp src/config.h  \
 		src/gui.cpp    src/gui.h     \
 		src/state.h                  \
+		third_party/webview/webview.h \
 		$(JSON_HDR) | $(BUILD)
 	$(CXX) $(CXXFLAGS) \
 		src/main.cpp src/midi.cpp src/input.cpp src/jog.cpp src/knob.cpp \
 		src/config.cpp src/gui.cpp \
 		-o $@ $(LDFLAGS)
+
+# WebView2 loader needs to sit next to the exe at runtime.
+$(BUILD)/WebView2Loader.dll: $(WV2_DLL) | $(BUILD)
+	cp $< $@
+
+# Frontend HTML must be reachable from the exe's working directory.
+$(BUILD)/index.html: frontend_template/index.html | $(BUILD)
+	cp $< $@
 
 $(BUILD):
 	mkdir -p $(BUILD)

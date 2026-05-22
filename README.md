@@ -48,7 +48,7 @@ Press every pad, twist every knob, scroll both jog wheels with the controller pl
 - [x] All three jog modes (held key, mouse XY, tap-per-N) in `src/jog.{h,cpp}`
 - [x] All three knob modes (wheel scroll, threshold, direction tap) in `src/knob.{h,cpp}`
 - [x] JSON config with hot reload (`config/default.json`, polled every 500ms)
-- [x] Minimal Win32 GUI: live event readout, reload button, MIDI learn that writes bindings back to JSON
+- [x] WebView2 GUI hosted inside the exe: visual rig, live event readout, reload, MIDI learn
 
 ## Running
 
@@ -90,14 +90,19 @@ Default mapping (in `config/default.json`, testable in Notepad):
 
 ## GUI
 
-`build\djmidi.exe` opens a small window alongside the console. Inside:
+`build\djmidi.exe` opens a WebView2 window. Edge's Chromium engine renders `index.html` from the build directory, so the layout is HTML/CSS, easy to tweak without recompiling C++. WebView2 ships with Windows 11; on Windows 10 install Microsoft's Edge WebView2 Evergreen runtime.
 
-- Status block (profile name, config path, binding counts)
-- Live MIDI event readout (updates every event)
-- **Reload config** button (force a re-read without waiting for the mtime poll)
-- **Start MIDI learn** button. Click it, hit any pad/button/knob on the FLX4, then click the key-input box and press the key you want bound. The new `key_tap` binding is appended to the active profile and saved to the JSON file. The mtime watcher picks the change up automatically.
+Inside the window:
 
-Profile switching is not in the GUI yet, edit the `active_profile` field in the JSON and save, the running app will pick it up.
+- Visual rig: deck 1, deck 2, mixer. Controls flash when their MIDI event fires.
+- Status block (profile name, config path, binding counts).
+- Live readout, last 250 events, scrolls inside its panel.
+- **Reload config** button, calls back into C++ to re-read the JSON.
+- **Start MIDI learn**. Click it, hit any pad/button/knob on the FLX4. C++ catches the event, sends the (ch, d1, kind) back to the page, focus jumps to the key box. Press a key and the binding is written to JSON. The mtime watcher reloads automatically.
+
+Profile switching is not in the UI yet, edit `active_profile` in the JSON and save, the running app picks it up.
+
+The HTML lives at `frontend_template/index.html`, the Makefile copies it to `build/index.html` next to the exe. Edit the HTML and re-`make` to refresh the copy, then relaunch djmidi.exe.
 
 ## Config format
 
